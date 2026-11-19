@@ -38,9 +38,10 @@ pip install -r requirements.txt --no-input
 
 ### 4. Configure the SharePoint folder
 
-- Create two folders named `left` and `right` inside your SharePoint folder
+- Create folders named `left` and `right` (and optionally `fullscreen`) inside your SharePoint folder
 - Add content to display on the left side to the "left" folder
 - Add content to display on the right side to the "right" folder
+- Add content to show as full-screen slides (one page per slide, shown after the home slide and before the composites) to the optional "fullscreen" folder
 
 ![Folder Structure](./images/FolderStructure.png)
 
