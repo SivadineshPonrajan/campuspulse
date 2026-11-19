@@ -195,14 +195,15 @@ def delete_invalid_files(folder_path):
 
 # =====================================================================================
 
-def process_folder(folder_path):
+def process_folder(folder_path, rename=True):
 	if not os.path.exists(folder_path):
 		print(f"Folder not found: {folder_path}")
 		return
 	converted_count, pdf_files = convert_all_pdfs(folder_path)
 	print(f"Converted PDF file to PNG")
-	renamed_count = rename_files_sequentially(folder_path)
-	print(f"Renamed image file")
+	if rename:
+		renamed_count = rename_files_sequentially(folder_path)
+		print(f"Renamed image file")
 	for pdf_path in pdf_files:
 		os.remove(pdf_path)
 		print(f"Deleted a PDF after conversion")
@@ -231,6 +232,14 @@ def process_extracted_folders():
 		process_folder(right_folder)
 	else:
 		print("Right folder not found in extracted directory")
+
+	# Process fullscreen folder if it exists (optional). Not renamed: pages are
+	# ordered by filename in composite.py so multi-page PDFs keep their page order.
+	fullscreen_folder = os.path.join(extract_path, "fullscreen")
+	if os.path.isdir(fullscreen_folder):
+		process_folder(fullscreen_folder, rename=False)
+	else:
+		print("Fullscreen folder not found in extracted directory (optional)")
 
 # =====================================================================================
 

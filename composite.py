@@ -1,4 +1,6 @@
 import os
+import re
+import json
 import math
 from PIL import Image
 import itertools
@@ -26,10 +28,34 @@ def create_composite():
     home_img = Image.open(home_path)
     
     # First image is just the home image
-    home_img.save(os.path.join(output_dir, '1.png'))
-    
+    home_img.save(os.path.join(output_dir, '001.png'))
+
+    # Fullscreen pages follow the home image, each fitted onto a SCREEN_RES canvas.
+    # Natural sort keeps multi-page PDF pages in order (page-2 before page-10).
+    fullscreen_dir = 'downloads/extracted/fullscreen'
+    fullscreen_images = []
+    if os.path.isdir(fullscreen_dir):
+        natural = lambda s: [int(t) if t.isdigit() else t for t in re.split(r'(\d+)', s.lower())]
+        fullscreen_images = [os.path.join(fullscreen_dir, f) for f in sorted(os.listdir(fullscreen_dir), key=natural)
+                             if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+
+    # Numbering starts at 2 since 1 is home; composites follow the fullscreen pages
+    image_count = 2
+    # Canvas size comes from SCREEN_RES in config.json (e.g. "2056x1329")
+    with open('config.json') as f:
+        canvas_w, canvas_h = map(int, json.load(f)["SCREEN_RES"].lower().split('x'))
+    for fs_path in fullscreen_images:
+        img = Image.open(fs_path).convert('RGB')
+        # Fit inside the canvas keeping aspect ratio, centered on the background colour
+        scale = min(canvas_w / img.width, canvas_h / img.height)
+        new_size = (int(img.width * scale), int(img.height * scale))
+        canvas = Image.new('RGB', (canvas_w, canvas_h), '#E3EDF5')
+        canvas.paste(img.resize(new_size, Image.LANCZOS), ((canvas_w - new_size[0]) // 2, (canvas_h - new_size[1]) // 2))
+        canvas.save(os.path.join(output_dir, f'{image_count:03d}.png'))
+        image_count += 1
+    print(f"Added {len(fullscreen_images)} fullscreen slides")
+
     # Create all possible combinations of left and right images (in groups of 2)
-    image_count = 2  # Start numbering from 2 since 1 is home
     
     # Group left images into pairs (if odd, last group will have home.jpg)
     left_pairs = []
@@ -221,7 +247,7 @@ def create_composite():
             composite.paste(cell_bg, (calendar_width * 2, i * side_height))
         
         # Save the composite image
-        composite.save(os.path.join(output_dir, f'{image_count}.png'))
+        composite.save(os.path.join(output_dir, f'{image_count:03d}.png'))
         image_count += 1
         # print(two_image_height_right)
         two_image_height_right = 0
